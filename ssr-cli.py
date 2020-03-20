@@ -200,6 +200,9 @@ class Cli:
 
     @staticmethod
     def status():
+        """
+        ssr status
+        """
         if os.path.exists(os.path.join(app_home, 'ssr.pid')):
             with open(os.path.join(app_home, 'ssr.pid'))as fp:
                 pid = fp.read().strip()
