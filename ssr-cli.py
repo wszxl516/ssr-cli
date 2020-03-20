@@ -182,8 +182,9 @@ class Log:
 class Cli:
     def __init__(self) -> None:
         self._config_file = os.path.join(app_home, 'config.json')
-        if not os.path.exists(self._config_file) or not os.path.isfile(self._config_file):
+        if not os.path.exists(app_home):
             os.mkdir(app_home)
+        if not os.path.exists(self._config_file) or not os.path.isfile(self._config_file):
             with open(self._config_file, 'w')as fp:
                 fp.write('{"sub_url": ""}')
                 Log.error('please fill in config file {}!'.format(self._config_file))
