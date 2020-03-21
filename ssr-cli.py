@@ -158,7 +158,7 @@ class Sock5server:
 
     @staticmethod
     def daemon_stop():
-        if os.path.exists(os.path.join(app_home, 'ssr.pid')):
+        if os.path.exists(ssr_pid):
             daemon.daemon_stop(ssr_pid)
         else:
             Log.warring('socks5 proxy not running!')
@@ -204,8 +204,8 @@ class Cli:
         """
         ssr status
         """
-        if os.path.exists(os.path.join(app_home, 'ssr.pid')):
-            with open(os.path.join(app_home, 'ssr.pid'))as fp:
+        if os.path.exists(ssr_pid):
+            with open(ssr_pid)as fp:
                 pid = fp.read().strip()
             if os.path.exists(os.path.join('/proc', pid)):
                 Log.info('Running PID: {}'.format(pid))
@@ -266,9 +266,9 @@ class Cli:
         sub_nodes = self._get_by_name('sub_nodes')
         if sub_nodes and sub_nodes.__len__() + 1 < node:
             Log.error('no that node inside!')
-        Log.info('switch to {} success!'.format(sub_nodes[node].get('remarks')))
-        if os.path.exists('ssr.pid'):
+        if os.path.exists(ssr_pid):
             Sock5server.daemon_stop()
+        Log.info('switch to {} '.format(sub_nodes[node].get('remarks')))
         node_dict = sub_nodes[node]
         node_dict['password'] = node_dict['password'].encode()
         node_dict['server_port'] = int(node_dict['server_port'])
