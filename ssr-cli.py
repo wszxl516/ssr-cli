@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, with_statement
-from shadowsocks import eventloop, tcprelay, udprelay, asyncdns, daemon
-import json
-import fire
-import os
-import sys
-import requests
-import base64
-from urllib import parse
+import sys, os
 app_home = os.path.join(os.getenv('HOME'), '.ssr-cli')
 ssr_log = os.path.join(os.getenv('HOME'), '.ssr-cli', 'ssr.log')
 ssr_pid = os.path.join(os.getenv('HOME'), '.ssr-cli', 'ssr.pid')
-
+try:
+    fp = open(ssr_log, 'a')
+except Exception:
+    fp = open(os.devnull, 'a')
+sys.stdout = fp
+from shadowsocks import eventloop, tcprelay, udprelay, asyncdns, daemon
+import json
+import fire
+import requests
+import base64
+from urllib import parse
 
 class Subscription:
     def __init__(self, sub_url):
@@ -167,15 +170,15 @@ class Sock5server:
 class Log:
     @staticmethod
     def info(message: str, end='\n'):
-        print('\x1b[32m', message, '\x1b[0m', end=end)
+        print('\x1b[32m', message, '\x1b[0m', end=end, file=sys.stderr)
 
     @staticmethod
     def warring(message: str, end='\n'):
-        print('\x1b[33m', message, '\x1b[0m', end=end)
+        print('\x1b[33m', message, '\x1b[0m', end=end, file=sys.stderr)
 
     @staticmethod
     def error(message: str, end='\n'):
-        print('\x1b[31m', message, '\x1b[0m', end=end)
+        print('\x1b[31m', message, '\x1b[0m', end=end, file=sys.stderr)
         sys.exit(1)
 
 
@@ -198,6 +201,7 @@ class Cli:
         :return:
         """
         Sock5server.daemon_stop()
+        Log.error('Stopped')
 
     @staticmethod
     def status():
@@ -228,6 +232,13 @@ class Cli:
         else:
             return None
 
+    @staticmethod
+    def _differ(nodes1, nodes2) -> int:
+        nodes1 =[tuple(n1.items()) for n1 in nodes1]
+        nodes2 =[tuple(n2.items()) for n2 in nodes2]
+        diff_num = set(nodes2).difference(set(nodes1))
+        return diff_num.__len__()
+
     def update(self) -> None:
         """
         update subscription
@@ -240,9 +251,9 @@ class Cli:
             sub_data = sub.json
         if sub_data.get('code', 1) != 0:
             Log.error('get subscription failed: {}!'.format(sub_data.get('message')))
+        Log.info('update succeed got {} new node(s)!'.format(self._differ(self._config['sub_nodes'], sub_data.get('data') )))
         self._config['sub_nodes'] = sub_data.get('data')
         self._save_config()
-        Log.info("update success!")
 
     def list(self) -> None:
         """
@@ -255,7 +266,7 @@ class Cli:
         else:
             for num, node in enumerate(sub_nodes):
                 Log.warring(num, end=' ')
-                print(node.get('remarks'))
+                Log.info(node.get('remarks'))
 
     def switch(self, node: int) -> None:
         """
@@ -278,4 +289,11 @@ class Cli:
 
 
 if __name__ == '__main__':
-    fire.Fire(Cli())
+    try:
+        if sys.argv.__len__() <= 1:
+            Log.warring('Type --help to get more info.')
+        fire.Fire(Cli())
+    except Exception as error:
+        print(error)
+    finally:
+        fp.close()
