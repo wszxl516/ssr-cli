@@ -235,7 +235,7 @@ class Cli:
         test all nodes
         """
         for node in range(self._config['sub_nodes'].__len__()):
-            self.test(node)
+            self._test(node)
 
 
     @staticmethod
