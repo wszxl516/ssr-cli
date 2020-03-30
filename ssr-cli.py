@@ -11,10 +11,14 @@ except Exception:
     fp = open(os.devnull, 'a')
 sys.stdout = fp
 from shadowsocks import eventloop, tcprelay, udprelay, asyncdns, daemon
+import traceback
 import json
 import fire
 import requests
+import socket
+import time
 import base64
+import pprint
 from urllib import parse
 
 class Subscription:
@@ -203,6 +207,37 @@ class Cli:
         Sock5server.daemon_stop()
         Log.error('Stopped')
 
+    def _test(self, node: int=0) -> None:
+        """
+        test node connect delay
+        :param node: node number
+        """
+        Log.warring(node, end='')
+        try:
+            start = time.time()
+            socket.setdefaulttimeout(5)
+            so = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+            so.connect((self._config['sub_nodes'][node].get('server'),
+                        int(self._config['sub_nodes'][node].get('server_port'))))
+            end = time.time()
+
+            Log.info(": {}  {:.2f} ms".format(self._config['sub_nodes'][node].get('remarks'), (end-start)*1000))
+            self._config['sub_nodes'][node]['delay'] = '{:.2f} ms'.format((end-start)*1000)
+        except Exception:
+            self._config['sub_nodes'][node]['delay'] = '{}'.format('--')
+            Log.warring(": {} time out or Refused".format(self._config['sub_nodes'][node].get('remarks')))
+        finally:
+            self._save_config()
+            so.close()
+
+    def test(self)-> None:
+        """
+        test all nodes
+        """
+        for node in range(self._config['sub_nodes'].__len__()):
+            self.test(node)
+
+
     @staticmethod
     def status():
         """
@@ -224,7 +259,8 @@ class Cli:
 
     def _save_config(self) -> None:
         with open(self._config_file, 'w')as fp:
-            json.dump(self._config, fp)
+            json.dump(self._config, fp, indent=4)
+
 
     def _get_by_name(self, name: str) -> str or None:
         if name in self._config:
@@ -266,7 +302,8 @@ class Cli:
         else:
             for num, node in enumerate(sub_nodes):
                 Log.warring(num, end=' ')
-                Log.info(node.get('remarks'))
+                Log.info(node.get('remarks'), end=' ')
+                Log.info(node.get('delay', ''))
 
     def switch(self, node: int) -> None:
         """
@@ -294,6 +331,7 @@ if __name__ == '__main__':
             Log.warring('Type --help to get more info.')
         fire.Fire(Cli())
     except Exception as error:
+        print(traceback.format_exc())
         print(error)
     finally:
         fp.close()
