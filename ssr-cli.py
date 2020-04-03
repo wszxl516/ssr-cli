@@ -214,9 +214,10 @@ class Cli:
         """
         Log.warring(node, end='')
         try:
-            start = time.time()
+
             socket.setdefaulttimeout(5)
             so = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+            start = time.time()
             so.connect((self._config['sub_nodes'][node].get('server'),
                         int(self._config['sub_nodes'][node].get('server_port'))))
             end = time.time()
@@ -328,10 +329,17 @@ class Cli:
 if __name__ == '__main__':
     try:
         if sys.argv.__len__() <= 1:
-            Log.warring('Type --help to get more info.')
-        fire.Fire(Cli())
+            Log.error('Type --help to get more info.')
+        cli = Cli()
+        fire.Fire(component={'--update': cli.update,
+                             '--list': cli.list,
+                             '--switch': cli.switch,
+                             '--status': cli.status,
+                             '--stop': cli.stop,
+                             '--test': cli.test})
+    except KeyboardInterrupt:
+        pass
     except Exception as error:
-        print(traceback.format_exc())
-        print(error)
+        Log.error(traceback.format_exc())
     finally:
         fp.close()
