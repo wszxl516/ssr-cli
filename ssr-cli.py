@@ -288,7 +288,7 @@ class Cli:
             sub_data = sub.json
         if sub_data.get('code', 1) != 0:
             Log.error('get subscription failed: {}!'.format(sub_data.get('message')))
-        Log.info('update succeed got {} new node(s)!'.format(self._differ(self._config['sub_nodes'], sub_data.get('data') )))
+        Log.info('update succeed got {} new node(s)!'.format(self._differ(self._config.get('sub_nodes', []), sub_data.get('data') )))
         self._config['sub_nodes'] = sub_data.get('data')
         self._save_config()
 
