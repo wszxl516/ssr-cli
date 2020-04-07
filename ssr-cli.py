@@ -188,7 +188,6 @@ class Log:
     @staticmethod
     def error(message: str, end='\n'):
         print('\x1b[31m', message, '\x1b[0m', end=end, file=sys.stderr)
-        sys.exit(1)
 
 
 class Cli:
