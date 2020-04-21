@@ -170,7 +170,7 @@ class Sock5server:
                 pid = fp.read()
                 if os.path.exists(os.path.join('/proc', pid)):
                     daemon.daemon_stop(ssr_pid)
-                    Log.error('Stopped')
+                    Log.warring('Stopped')
                 else:
                     Log.warring('socks5 proxy not running!')
                     os.remove(ssr_pid)
@@ -188,6 +188,7 @@ class Log:
     @staticmethod
     def error(message: str, end='\n'):
         print('\x1b[31m', message, '\x1b[0m', end=end, file=sys.stderr)
+        sys.exit(1)
 
 
 class Cli:
@@ -222,7 +223,7 @@ class Cli:
             socket.setdefaulttimeout(5)
             so = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
             start = time.time()
-            so.connect((self._config['sub_nodes'][node].get('server'),
+            so.connect_ex((self._config['sub_nodes'][node].get('server'),
                         int(self._config['sub_nodes'][node].get('server_port'))))
             end = time.time()
 
@@ -261,6 +262,8 @@ class Cli:
     def _get_config(self) -> None:
         with open(self._config_file, 'r')as fp:
             self._config = json.load(fp)
+        if self._config.__len__() == 0:
+            self._config = {}
 
     def _save_config(self) -> None:
         with open(self._config_file, 'w')as fp:
@@ -317,7 +320,9 @@ class Cli:
         :return:
         """
         sub_nodes = self._get_by_name('sub_nodes')
-        if sub_nodes and sub_nodes.__len__() + 1 < node:
+        if sub_nodes is None:
+            Log.error('no any node inside!')
+        if sub_nodes.__len__() + 1 < node:
             Log.error('no that node inside!')
         Sock5server.daemon_stop()
         Log.info('switch to {} '.format(sub_nodes[node].get('remarks')))
